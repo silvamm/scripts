@@ -44,14 +44,38 @@ def criar_setup(dados_planilha):
 
     return resultado
 
+def criar_inserts_course_instituion(lista_tuplas):
+
+    ies_sem_duplicacao = set()
+    for tuple in lista_tuplas:
+        ies_sem_duplicacao.add(tuple[1])
+
+    inserts = ''
+    for i in ies_sem_duplicacao:
+        inserts += f'INSERT INTO course_institution (course_id, institution_id) VALUES (id_unificado,{i});\n'
+
+    return inserts
+
 dados_planilha = ler_csv('mapeamento-cursos.csv')
 setup = criar_setup(dados_planilha)   
 
 inserts = ''
-for k, v in setup.items():     
-    inserts += f'-- {k}\n'
-    inserts += criar_inserts_registro_unificado(1, v)
+for k, v in setup.items():
+
+    if not k in ['ADMINISTRAÇÃO (BACHARELADO)','ARQUITETURA E URBANISMO (BACHARELADO)']:     
+        continue
+
+    inserts += f'\n-- {k}\n'
+
+    insert_registro_unificado = criar_inserts_registro_unificado(1, v)
+
+    if not (insert_registro_unificado):
+        inserts += '-- Sem registro encontrado na IES mandatoria\n'
+        continue
+
+    inserts += insert_registro_unificado
     inserts += criar_inserts_legacy_course(v)
+    inserts += criar_inserts_course_instituion(v)
 
 criar_script(inserts)
 
