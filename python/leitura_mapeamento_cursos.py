@@ -6,6 +6,20 @@ def ler_csv(nome_arquivo):
 
     return data
 
+def criar_setup(dados_planilha):
+    resultado = {}
+
+    for num_linha, linha in dados_planilha.iterrows():
+
+        descricao = linha['Descrição']
+        id_curso_id_ies = (linha['Código'], linha['Código IES'], linha)
+        if not descricao in resultado:
+            resultado[descricao] = [id_curso_id_ies]
+        else:
+            resultado[descricao].append(id_curso_id_ies)
+
+    return resultado
+
 def criar_inserts_registro_unificado(id_ies_mandatoria, lista_tuplas):
     inserts = ''
     for tuple in lista_tuplas:
@@ -25,25 +39,6 @@ def criar_inserts_legacy_course(lista_tuplas):
 
     return inserts
 
-def criar_script(inserts):
-    with open('script.sql', 'w') as script_destino:
-        script_destino.write(inserts)
-
-
-def criar_setup(dados_planilha):
-    resultado = {}
-
-    for num_linha, linha in dados_planilha.iterrows():
-
-        descricao = linha['Descrição']
-        id_curso_id_ies = (linha['Código'], linha['Código IES'], linha)
-        if not descricao in resultado:
-            resultado[descricao] = [id_curso_id_ies]
-        else:
-            resultado[descricao].append(id_curso_id_ies)
-
-    return resultado
-
 def criar_inserts_course_instituion(lista_tuplas):
 
     ies_sem_duplicacao = set()
@@ -56,28 +51,40 @@ def criar_inserts_course_instituion(lista_tuplas):
 
     return inserts
 
-dados_planilha = ler_csv('mapeamento-cursos.csv')
-setup = criar_setup(dados_planilha)   
 
-inserts = ''
-for k, v in setup.items():
+def criar_script(inserts):
+    with open('script.sql', 'w') as script_destino:
+        script_destino.write(inserts)
 
-    if not k in ['ADMINISTRAÇÃO (BACHARELADO)','ARQUITETURA E URBANISMO (BACHARELADO)']:     
-        continue
 
-    inserts += f'\n-- {k}\n'
 
-    insert_registro_unificado = criar_inserts_registro_unificado(1, v)
+def main():
+    dados_planilha = ler_csv('mapeamento-cursos.csv')
+    setup = criar_setup(dados_planilha)   
 
-    if not (insert_registro_unificado):
-        inserts += '-- Sem registro encontrado na IES mandatoria\n'
-        continue
+    inserts = ''
+    for k, v in setup.items():
 
-    inserts += insert_registro_unificado
-    inserts += criar_inserts_legacy_course(v)
-    inserts += criar_inserts_course_instituion(v)
+        if not k in ['ADMINISTRAÇÃO (BACHARELADO)','ARQUITETURA E URBANISMO (BACHARELADO)']:     
+            continue
 
-criar_script(inserts)
+        inserts += f'\n-- {k}\n'
+
+        insert_registro_unificado = criar_inserts_registro_unificado(1, v)
+
+        if not (insert_registro_unificado):
+            inserts += '-- Sem registro encontrado na IES mandatoria\n'
+            continue
+
+        inserts += insert_registro_unificado
+        inserts += criar_inserts_legacy_course(v)
+        inserts += criar_inserts_course_instituion(v)
+
+    criar_script(inserts)
+    
+if __name__ == "__main__":
+    main()
+
 
     
 
