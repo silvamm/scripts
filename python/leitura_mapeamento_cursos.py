@@ -51,18 +51,16 @@ def criar_inserts_course_instituion(lista_tuplas):
 
     return inserts
 
-
 def criar_script(inserts):
     with open('script.sql', 'w') as script_destino:
         script_destino.write(inserts)
-
-
 
 def main():
     dados_planilha = ler_csv('mapeamento-cursos.csv')
     setup = criar_setup(dados_planilha)   
 
-    inserts = ''
+    inserts = 'CREATE OR REPLACE FUNCTION unificar_cursos()\n\tRETURNS void\n\tLANGUAGE plpgsql\nAS\n$$\nDECLARE\n\tid_unificado integer;\nBEGIN'
+    
     for k, v in setup.items():
 
         if not k in ['ADMINISTRAÇÃO (BACHARELADO)','ARQUITETURA E URBANISMO (BACHARELADO)']:     
@@ -80,6 +78,8 @@ def main():
         inserts += criar_inserts_legacy_course(v)
         inserts += criar_inserts_course_instituion(v)
 
+    inserts += 'END;\n$$'
+    
     criar_script(inserts)
 
 if __name__ == "__main__":
