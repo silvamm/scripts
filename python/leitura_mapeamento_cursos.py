@@ -6,31 +6,22 @@ def ler_csv(nome_arquivo):
 
     return data
 
-def criar_inserts_registro_unificado(resultado, id_ies_mandatoria, chave):
+def criar_inserts_registro_unificado(id_ies_mandatoria, lista_tuplas):
     inserts = ''
-    resultado[chave]
-
-    for k, v in resultado.items():
-        if not (k == chave):
-            continue
-        inserts += f'-- {i}\n'
-        for tuple in v:
-            #id da ies mandatoria
-            if(tuple[1] == id_ies_mandatoria):
-                inserts += f'''INSERT INTO course (area_id, description, full_description, history_description, abbreviation, degree)             
-                            SELECT cod_cent as area_id, des_curs, des_cur2, des_cur3, abr_curs, tipo_cur FROM oracle.course as legado 
-                            WHERE legado.cod_curs = {tuple[0]} and legado.cod_empr = {id_ies_mandatoria} RETURNING id INTO id_unificado;\n'''
-                
-                break
+    for tuple in lista_tuplas:
+        #id da ies mandatoria
+        if(tuple[1] == id_ies_mandatoria):
+            inserts += f'''INSERT INTO course (area_id, description, full_description, history_description, abbreviation, degree)             
+                        SELECT cod_cent as area_id, des_curs, des_cur2, des_cur3, abr_curs, tipo_cur FROM oracle.course as legado 
+                        WHERE legado.cod_curs = {tuple[0]} and legado.cod_empr = {id_ies_mandatoria} RETURNING id INTO id_unificado;\n'''
+            
+            break
     return inserts
 
-def criar_inserts_legacy_course(resultado, chave):
+def criar_inserts_legacy_course(lista_tuplas):
     inserts = ''
-
-    for k, v in resultado.items():
-        inserts += '\n'
-        for tuple in v:
-            inserts += f'insert into legacy_course (legacy_course_id, institution_id, course_id) values ({tuple[0]},{tuple[1]},id_unificado);\n'
+    for tuple in lista_tuplas:
+        inserts += f'INSERT INTO legacy_course (legacy_course_id, institution_id, course_id) values ({tuple[0]},{tuple[1]},id_unificado);\n'
 
     return inserts
 
@@ -40,7 +31,7 @@ def criar_script(inserts):
 
 
 def criar_setup(dados_planilha):
-    resultado = ''
+    resultado = {}
 
     for num_linha, linha in dados_planilha.iterrows():
 
@@ -55,9 +46,14 @@ def criar_setup(dados_planilha):
 
 dados_planilha = ler_csv('mapeamento-cursos.csv')
 setup = criar_setup(dados_planilha)   
+
 inserts = ''
-for k, v in setup:     
+for k, v in setup.items():     
     inserts += f'-- {k}\n'
+    inserts += criar_inserts_registro_unificado(1, v)
+    inserts += criar_inserts_legacy_course(v)
+
+criar_script(inserts)
 
     
 
