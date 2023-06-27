@@ -81,19 +81,6 @@ def main():
         inserts += criar_inserts_course_instituion(v)
 
     criar_script(inserts)
-    
+
 if __name__ == "__main__":
     main()
-
-
-    
-
-    
-
-    #inserts_course_instituion += f' -- {i}\n'
-    #inserts_course_instituion += f'insert into course_institution (course_id, institution_id) values (id_unificado,{tuple[1]});\n'
-#inserts_course_institution = ''
-#for i in resultado[]
-#print(inserts)
-#insert = 'insert into legacy_course (legacy_course_id, institution_id, course_id) values (,'', id_unificado);'
-
