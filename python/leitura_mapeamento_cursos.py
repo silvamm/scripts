@@ -12,46 +12,56 @@ def criar_setup(dados_planilha):
     for num_linha, linha in dados_planilha.iterrows():
 
         descricao = linha['Descrição']
-        id_curso_id_ies = (linha['Código'], linha['Código IES'], linha)
+
+        dados = {} 
+        dados["Código Legado"] = linha['Código']
+        dados["Código IES"] = linha['Código IES']
+        dados["Info"] = linha
+        
         if not descricao in resultado:
-            resultado[descricao] = [id_curso_id_ies]
+            resultado[descricao] = [dados]
         else:
-            resultado[descricao].append(id_curso_id_ies)
+            resultado[descricao].append(dados)
 
     return resultado
 
-def criar_inserts_registro_unificado(id_ies_mandatoria, lista_tuplas):
+def criar_inserts_registro_unificado(id_ies_mandatoria, dados):
     inserts = ''
-    for tuple in lista_tuplas:
+    for dado in dados:
         #id da ies mandatoria
-        if(tuple[1] == id_ies_mandatoria):
-            inserts += f'''INSERT INTO course (area_id, description, full_description, history_description, abbreviation, degree)             
+        if(dado["Código IES"] == id_ies_mandatoria):
+            inserts += f'''\tINSERT INTO course (area_id, description, full_description, history_description, abbreviation, degree)             
                         SELECT cod_cent as area_id, des_curs, des_cur2, des_cur3, abr_curs, tipo_cur FROM oracle.course as legado 
-                        WHERE legado.cod_curs = {tuple[0]} and legado.cod_empr = {id_ies_mandatoria} RETURNING id INTO id_unificado;\n'''
+                        WHERE legado.cod_curs = {dado["Código Legado"]} and legado.cod_empr = {id_ies_mandatoria} RETURNING id INTO id_unificado;\n'''
             
             break
+
     return inserts
 
-def criar_inserts_legacy_course(lista_tuplas):
+def criar_inserts_legacy_course(dados):
     inserts = ''
-    for tuple in lista_tuplas:
-        inserts += f'INSERT INTO legacy_course (legacy_course_id, institution_id, course_id) values ({tuple[0]},{tuple[1]},id_unificado);\n'
+    for dado in dados:
+        inserts += f'\tINSERT INTO legacy_course (legacy_course_id, institution_id, course_id) values ({dado["Código Legado"]},{dado["Código IES"]},id_unificado);\n'
 
     return inserts
 
-def criar_inserts_course_instituion(lista_tuplas):
+def criar_inserts_course_instituion(dados):
 
     ies_sem_duplicacao = set()
-    for tuple in lista_tuplas:
-        ies_sem_duplicacao.add(tuple[1])
+    for dado in dados:
+        ies_sem_duplicacao.add(dado["Código IES"])
 
     inserts = ''
     for i in ies_sem_duplicacao:
-        inserts += f'INSERT INTO course_institution (course_id, institution_id) VALUES (id_unificado,{i});\n'
+        inserts += f'\tINSERT INTO course_institution (course_id, institution_id) VALUES (id_unificado,{i});\n'
 
     return inserts
 
 def criar_script(inserts):
+    script = 'CREATE OR REPLACE FUNCTION unificar_cursos()\n\tRETURNS void\n\tLANGUAGE plpgsql\nAS\n$$\nDECLARE\n\tid_unificado integer;\nBEGIN'
+    script += inserts
+    script += 'END;\n$$'
+
     with open('script.sql', 'w') as script_destino:
         script_destino.write(inserts)
 
@@ -59,13 +69,9 @@ def main():
     dados_planilha = ler_csv('mapeamento-cursos.csv')
     setup = criar_setup(dados_planilha)   
 
-    inserts = 'CREATE OR REPLACE FUNCTION unificar_cursos()\n\tRETURNS void\n\tLANGUAGE plpgsql\nAS\n$$\nDECLARE\n\tid_unificado integer;\nBEGIN'
-    
+    inserts = ''
     for k, v in setup.items():
-
-        if not k in ['ADMINISTRAÇÃO (BACHARELADO)','ARQUITETURA E URBANISMO (BACHARELADO)']:     
-            continue
-
+        
         inserts += f'\n-- {k}\n'
 
         insert_registro_unificado = criar_inserts_registro_unificado(1, v)
@@ -77,8 +83,6 @@ def main():
         inserts += insert_registro_unificado
         inserts += criar_inserts_legacy_course(v)
         inserts += criar_inserts_course_instituion(v)
-
-    inserts += 'END;\n$$'
     
     criar_script(inserts)
 
