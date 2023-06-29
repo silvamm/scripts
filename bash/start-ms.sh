@@ -23,7 +23,7 @@ function stopIes(){
 
 function stopGateway(){
 	fuser -k 8080/tcp
-	docker ps --filter name=krakend* --filter status=running -aq | xargs docker stop
+	docker ps --filter name=krakend* --filter status=running -aq | xargs -r docker stop
 }
 
 function stopAll(){
