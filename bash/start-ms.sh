@@ -25,8 +25,13 @@ function stopGateway(){
 	fuser -k 8080/tcp
 	docker ps --filter name=krakend* --filter status=running -aq | xargs -r docker stop
 }
+function stopDb(){
+	cd "${ROOT_PATH}/${CORE_NAME}"
+	docker compose down
+}
 
 function stopAll(){
+	stopDb
 	stopCore
 	stopOrch
 	stopIes
@@ -40,7 +45,6 @@ function runDb(){
 
 function runCore(){
 	cd "${ROOT_PATH}/${CORE_NAME}"
-	docker compose up -d
 	gnome-terminal  --tab --title=${CORE_NAME} -- bash -c "mvn -DskipTests=true clean install; java -jar "${ROOT_PATH}/${CORE_NAME}/target/${CORE_NAME}-1.0-SNAPSHOT.jar" --server.port=${CORE_PORT} --institution.baseurl=http://localhost:${IES_PORT}" 
 }
 
@@ -61,6 +65,7 @@ function runGateway(){
 }
 
 function runAll(){
+	runDb
 	runCore
 	runOrch
 	runIes
@@ -69,7 +74,7 @@ function runAll(){
 
 for ARG in $*; do
 	case $ARG in
-	   "-h") echo -e "==========\ns commands - for stop\n==========\n-sa stop all\n-sc stop core\n-so stop orchestrator\n-sg stop gateway\n-si stop institutions\n\n==========\nr commands - for run\n==========\n-ra run all\n-rc run core\n-ro run orchestrator\n-rg run gateway\n-ri run institutions\n"
+	   "-h") echo -e "==========\ns commands - for stop\n==========\n-sa stop all\n-sc stop core\n-so stop orchestrator\n-sg stop gateway\n-si stop institutions\n-sdb stop database\n==========\nr commands - for run\n==========\n-ra run all\n-rc run core\n-ro run orchestrator\n-rg run gateway\n-ri run institutions\n-rdb run database\n"
 	         ;;
 	   "-sa") stopAll
 	         ;;
@@ -78,6 +83,8 @@ for ARG in $*; do
 	   "-so") stopOrch
 	         ;;
 	   "-sg") stopGateway
+	         ;;
+	   "-sdb") stopDb
 	         ;;
 	   "-si") stopIes
 	         ;;
@@ -89,9 +96,11 @@ for ARG in $*; do
 	         ;;
 	   "-ri") runIes  
 	         ;;
+	   "-rdb") runDb
+	         ;;
 	   "-rg") runGateway  
 	         ;;
-	   *)
+	   *) echo -e "Comando inexistente"
 	      ;;
 	esac
 done

@@ -100,7 +100,7 @@ for ARG in $*; do
 	         ;;
 	   "-rg") runGateway  
 	         ;;
-	   *)
+	   *) echo -e "Comando inexistente"
 	      ;;
 	esac
 done
