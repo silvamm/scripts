@@ -5,6 +5,7 @@
 #######################################################################################
 
 ROOT_PATH="/home/matheusmonteiro/Documents/Projetos"
+
 CORE_NAME="shared-course-api"
 ORCH_NAME="candidate-orchestrator-api"
 IES_NAME="shared-institution-api"
@@ -97,21 +98,30 @@ function runCore(){
 	printHeader "Run Core"
 
 	cd "${ROOT_PATH}/${CORE_NAME}"
-	gnome-terminal  --tab --title=${CORE_NAME} -- bash -c "mvn -DskipTests=true clean install; java -jar "${ROOT_PATH}/${CORE_NAME}/target/${CORE_NAME}-1.0-SNAPSHOT.jar" --server.port=${CORE_PORT} --institution.baseurl=http://localhost:${IES_PORT}" 
+	gnome-terminal  --tab --title=${CORE_NAME} \
+	-- bash -c "mvn -DskipTests=true clean install;\
+	java -jar "${ROOT_PATH}/${CORE_NAME}/target/${CORE_NAME}-1.0-SNAPSHOT.jar"\
+	--server.port=${CORE_PORT} --institution.baseurl=http://localhost:${IES_PORT}" 
 }
 
 function runOrch(){
 	printHeader "Run Orch"
 
 	cd "${ROOT_PATH}/${ORCH_NAME}"
-	gnome-terminal --tab --title=${ORCH_NAME} -- bash -c "mvn -DskipTests=true clean install; java -jar "${ROOT_PATH}/${ORCH_NAME}/target/${ORCH_NAME}-1.0-SNAPSHOT.jar" --server.port=${ORCH_PORT}" 
+	gnome-terminal --tab --title=${ORCH_NAME} -- \
+	bash -c "mvn -DskipTests=true clean install; \
+	java -jar "${ROOT_PATH}/${ORCH_NAME}/target/${ORCH_NAME}-1.0-SNAPSHOT.jar" \
+	--server.port=${ORCH_PORT}" 
 }
 
 function runIes(){
 	printHeader "Run IES"
 
 	cd "${ROOT_PATH}/${IES_NAME}"
-	gnome-terminal  --tab --title=${IES_NAME} -- bash -c "mvn -DskipTests=true clean install; java -jar "${ROOT_PATH}/${IES_NAME}/target/${IES_NAME}-1.0.0-SNAPSHOT.jar" --server.port=${IES_PORT}"
+	gnome-terminal  --tab --title=${IES_NAME} -- \
+	bash -c "mvn -DskipTests=true clean install; \
+	java -jar "${ROOT_PATH}/${IES_NAME}/target/${IES_NAME}-1.0.0-SNAPSHOT.jar" \
+	--server.port=${IES_PORT}"
 }
 
 function runGateway(){
@@ -148,19 +158,6 @@ function run(){
 #  GIT COMMANDS
 #######################################################################################
 
-function gitCore(){
-	cd "${ROOT_PATH}/${CORE_NAME}"
-	git $1
-
-}
-
-function git(){
-	arr=("$@")
-	for ARG in "${arr[@]}"; do
-		echo $ARG
-	done
-}
-
 
 #######################################################################################
 #  HELP 
@@ -192,25 +189,24 @@ function help(){
 #  MAIN 
 #######################################################################################
 
-set -f
-IFS=, 
+
 while getopts ":hr:s:g:" option; do
    case $option in
 		h) 
 			help
 			exit;;
 		r)  
+			set -f #desativa glob
+			IFS=, 
             multi=($OPTARG)
 			run "${multi[@]}"
 			;;
 		s)
+			set -f #desativa glob
+			IFS=, 
             multi=($OPTARG)
 			stop "${multi[@]}"
-			;;
-		g)
-			multi=($OPTARG)
-			git "${multi[@]}"
-			;;		
+			;;	
 		\?) 
 			echo "Error: Invalid option"
 			exit;;
