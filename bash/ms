@@ -10,9 +10,9 @@ CORE_NAME="shared-course-api"
 ORCH_NAME="candidate-orchestrator-api"
 IES_NAME="shared-institution-api"
 
-CORE_PORT="8090"
-ORCH_PORT="8094"
-IES_PORT="8095"
+CORE_PORT="8091"
+ORCH_PORT="8090"
+IES_PORT="8092"
 
 COUNT=1
 function printHeader(){
@@ -157,7 +157,6 @@ function run(){
 #######################################################################################
 #  GIT COMMANDS
 #######################################################################################
-
 
 #######################################################################################
 #  HELP 
