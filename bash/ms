@@ -14,75 +14,6 @@ CORE_PORT="8091"
 ORCH_PORT="8090"
 IES_PORT="8092"
 
-COUNT=1
-function printHeader(){
-	echo
-	echo  "- [$COUNT] $1 "
-	echo
-	((COUNT++))
-}
-
-#######################################################################################
-#  STOP COMMANDS
-#######################################################################################
-
-function stopCore(){
-	printHeader "Stop Core"
-
-	fuser -k ${CORE_PORT}/tcp
-    ps -ef | grep ${CORE_NAME} | grep java | head -1 | awk '{print $2}' | xargs -r kill
-
-}
-
-function stopOrch(){
-	printHeader "Stop Orch"
-
-	fuser -k ${ORCH_PORT}/tcp
-	ps -ef | grep ${ORCH_NAME} | grep java | head -1 | awk '{print $2}' | xargs -r kill
-}
-
-function stopIes(){
-	printHeader "Stop IES"
-
-	fuser -k ${IES_PORT}/tcp
-	ps -ef | grep ${IES_NAME} | grep java | head -1 | awk '{print $2}' | xargs -r kill
-}
-
-function stopGateway(){
-	printHeader "Stop Gateway"
-
-	fuser -k 8080/tcp
-	docker ps --filter name=krakend* --filter status=running -aq | xargs -r docker stop
-}
-function stopDb(){
-	printHeader "Stop DB"
-
-	cd "${ROOT_PATH}/${CORE_NAME}"
-	docker compose down
-}
-
-function stopAll(){
-	stopDb
-	stopCore
-	stopOrch
-	stopIes
-	stopGateway
-}
-
-function stop(){
-   arr=("$@")
-   for ARG in "${arr[@]}"; do
-      	case $ARG in
-			c) stopCore;;
-			db) stopDb;;
-			a) stopAll;;  
-	   		o) stopOrch;;  
-	   		i) stopIes;;  
-	   		g) stopGateway;;  
-		esac
-	done
-}
-
 #######################################################################################
 #  RUN COMMANDS
 #######################################################################################
@@ -154,9 +85,98 @@ function run(){
 	done
 }
 
+
 #######################################################################################
-#  GIT COMMANDS
+#  STOP COMMANDS
 #######################################################################################
+
+function stopCore(){
+	printHeader "Stop Core"
+
+	fuser -k ${CORE_PORT}/tcp
+    	ps -ef | grep ${CORE_NAME} | grep java | head -1 | awk '{print $2}' | xargs -r kill
+
+}
+
+function stopOrch(){
+	printHeader "Stop Orch"
+
+	fuser -k ${ORCH_PORT}/tcp
+	ps -ef | grep ${ORCH_NAME} | grep java | head -1 | awk '{print $2}' | xargs -r kill
+}
+
+function stopIes(){
+	printHeader "Stop IES"
+
+	fuser -k ${IES_PORT}/tcp
+	ps -ef | grep ${IES_NAME} | grep java | head -1 | awk '{print $2}' | xargs -r kill
+}
+
+function stopGateway(){
+	printHeader "Stop Gateway"
+
+	fuser -k 8080/tcp
+	docker ps --filter name=krakend* --filter status=running -aq | xargs -r docker rm -f
+}
+function stopDb(){
+	printHeader "Stop DB"
+
+	cd "${ROOT_PATH}/${CORE_NAME}"
+	docker compose down
+}
+
+function stopAll(){
+	stopDb
+	stopCore
+	stopOrch
+	stopIes
+	stopGateway
+}
+
+function stop(){
+   arr=("$@")
+   for ARG in "${arr[@]}"; do
+      	case $ARG in
+			c) stopCore;;
+			db) stopDb;;
+			a) stopAll;;  
+	   		o) stopOrch;;  
+	   		i) stopIes;;  
+	   		g) stopGateway;;  
+		esac
+	done
+}
+
+#######################################################################################
+#  GO COMMANDS
+#######################################################################################
+
+function goCore(){
+ 	cd "${ROOT_PATH}/${CORE_NAME}"
+ 	$SHELL
+}
+
+function goOrch(){
+	cd "${ROOT_PATH}/${ORCH_NAME}"
+	$SHELL
+}
+
+function goInstitution(){
+	cd "${ROOT_PATH}/${IES_NAME}"
+	$SHELL
+}
+
+function go(){
+   arr=("$@")
+   for ARG in "${arr[@]}"; do
+      	case $ARG in
+			c) goCore;;
+	   		o) goOrch;;  
+	   		i) goInstitution;;  
+		esac
+	done
+}
+
 
 #######################################################################################
 #  HELP 
@@ -188,6 +208,13 @@ function help(){
 #  MAIN 
 #######################################################################################
 
+COUNT=1
+function printHeader(){
+	echo
+	echo  "- [$COUNT] $1 "
+	echo
+	((COUNT++))
+}
 
 while getopts ":hr:s:g:" option; do
    case $option in
@@ -205,6 +232,12 @@ while getopts ":hr:s:g:" option; do
 			IFS=, 
             multi=($OPTARG)
 			stop "${multi[@]}"
+			;;	
+		g)
+			set -f #desativa glob
+			IFS=, 
+            multi=($OPTARG)
+			go "${multi[@]}"
 			;;	
 		\?) 
 			echo "Error: Invalid option"
